@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, Verified, ShieldAlert, FileText, Camera } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Verified, ShieldAlert, FileText, ChevronRight, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProgress } from '../context/ProgressContext';
 import VoiceButton from '../components/VoiceButton';
@@ -12,12 +12,24 @@ const quizDataRaw = modulesData.digitalid;
 export default function DigitalIdModule() {
   const { lang, t } = useLanguage();
   const navigate = useNavigate();
-  const [selectedQuizIndex, setSelectedQuizIndex] = useState(null);
-  const [feedback, setFeedback] = useState(null);
-  const [showResult, setShowResult] = useState(false);
   const { markScenarioComplete, completedScenarios } = useProgress();
 
-  const currentQuiz = selectedQuizIndex !== null ? quizDataRaw[selectedQuizIndex] : null;
+  const [selectedQuizIndex, setSelectedQuizIndex] = useState(0);
+  const [feedback, setFeedback] = useState(null);
+  const [showResult, setShowResult] = useState(false);
+
+  // set initial quiz index to the first uncompleted scenario
+  useEffect(() => {
+    const isFinished = (completedScenarios['digitalid'] || []);
+    const firstUnfinished = quizDataRaw.findIndex((_, i) => !isFinished.includes(i));
+    if (firstUnfinished !== -1) {
+      setSelectedQuizIndex(firstUnfinished);
+    }
+  }, []);
+
+  const currentQuiz = quizDataRaw[selectedQuizIndex];
+  const completedCount = (completedScenarios['digitalid'] || []).length;
+  const isFinishedCurrent = (completedScenarios['digitalid'] || []).includes(selectedQuizIndex);
 
   const handleGuess = (guess) => {
     if (showResult) return;
@@ -30,75 +42,59 @@ export default function DigitalIdModule() {
     markScenarioComplete('digitalid', selectedQuizIndex);
   };
 
-  const handleNext = () => {
+  const handleNextQuiz = () => {
     setFeedback(null);
     setShowResult(false);
-    setSelectedQuizIndex(null);
+    if (selectedQuizIndex < quizDataRaw.length - 1) {
+      setSelectedQuizIndex(prev => prev + 1);
+    } else {
+      navigate('/');
+    }
   };
-
-  const completedCount = (completedScenarios['digitalid'] || []).length;
-
-  if (selectedQuizIndex === null) {
-    return (
-      <div className="animate-fade-in" style={{ padding: '0 1rem', paddingBottom: '3rem' }}>
-        <button className="btn-secondary" onClick={() => navigate('/')} style={{ marginBottom: '2rem' }}>
-          <ArrowLeft size={24} /> {t('goBack')}
-        </button>
-
-        <div style={{ marginBottom: '3rem', textAlign: 'center' }}>
-          <h1 style={{ fontSize: '3rem', color: '#0F172A', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-            <Verified size={40} color="#3B82F6" /> 50 Identity Scenarios
-            <VoiceButton text="50 Identity Scenarios" />
-          </h1>
-          <p style={{ fontSize: '1.4rem', color: '#475569' }}>Practice recognizing when it is safe to upload or share your Government ID.</p>
-          <div style={{ marginTop: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: completedCount === 50 ? '#D1FAE5' : '#DBEAFE', padding: '0.5rem 1.5rem', borderRadius: '20px', color: completedCount === 50 ? '#047857' : '#1D4ED8', fontWeight: 'bold', fontSize: '1.4rem', border: completedCount === 50 ? '2px solid #10B981' : 'none' }}>
-            {completedCount} / 50 Scenarios Completed
-            {completedCount === 50 && <span>🏆 - MODULE MASTERED</span>}
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '1.5rem', maxWidth: '1200px', margin: '0 auto' }}>
-          {quizDataRaw.map((quiz, index) => {
-            const isFinished = (completedScenarios['digitalid'] || []).includes(index);
-            return (
-              <motion.div
-                key={quiz.id}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setSelectedQuizIndex(index)}
-                style={{
-                  background: isFinished ? '#D1FAE5' : '#FFFFFF',
-                  border: isFinished ? '2px solid #10B981' : '2px solid #CBD5E1',
-                  borderRadius: '16px',
-                  padding: '2rem 1rem',
-                  textAlign: 'center',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 'bold',
-                  fontSize: '1.5rem',
-                  color: isFinished ? '#047857' : '#1E293B',
-                  transition: 'border-color 0.2s',
-                  position: 'relative'
-                }}
-              >
-                {isFinished && <CheckCircle size={20} color="#059669" style={{ position: 'absolute', top: '10px', right: '10px' }} />}
-                Scenario {index + 1}
-              </motion.div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
+  
+  const handlePrevQuiz = () => {
+    setFeedback(null);
+    setShowResult(false);
+    if (selectedQuizIndex > 0) {
+      setSelectedQuizIndex(prev => prev - 1);
+    }
+  };
 
   return (
     <div className="animate-fade-in" style={{ padding: '0 1rem', paddingBottom: '3rem' }}>
-      <button className="btn-secondary" onClick={handleNext} style={{ marginBottom: '2rem' }}>
-        <ArrowLeft size={24} /> Return to Scenario Grid
-      </button>
+      
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <button className="btn-secondary" onClick={() => navigate('/')}>
+          <ArrowLeft size={24} /> {t('goBack')}
+        </button>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: completedCount === 20 ? '#D1FAE5' : '#DBEAFE', padding: '0.5rem 1.5rem', borderRadius: '20px', color: completedCount === 20 ? '#047857' : '#1D4ED8', fontWeight: 'bold', fontSize: '1.4rem' }}>
+          {completedCount} / 20 Scenarios Completed
+          {completedCount === 20 && <span>🏆 MASTERED</span>}
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', padding: '0 1rem' }}>
+        <button 
+          className="btn-secondary" 
+          onClick={handlePrevQuiz} 
+          disabled={selectedQuizIndex === 0}
+          style={{ opacity: selectedQuizIndex === 0 ? 0.5 : 1 }}
+        >
+          <ChevronLeft size={24} /> Previous
+        </button>
+        <div style={{ fontSize: '1.5rem', fontWeight: 'bold', background: '#E2E8F0', padding: '0.5rem 1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          Scenario {selectedQuizIndex + 1}
+          {isFinishedCurrent && <CheckCircle size={20} color="#059669" />}
+        </div>
+        <button 
+          className="btn-secondary" 
+          onClick={handleNextQuiz}
+          disabled={selectedQuizIndex === quizDataRaw.length - 1}
+          style={{ opacity: selectedQuizIndex === quizDataRaw.length - 1 ? 0.5 : 1 }}
+        >
+          Next <ChevronRight size={24} />
+        </button>
+      </div>
 
       <div className="glass-panel" style={{ maxWidth: '800px', margin: '0 auto', background: '#F8FAFC' }}>
         
@@ -162,9 +158,9 @@ export default function DigitalIdModule() {
                 <button 
                   className="btn-primary" 
                   style={{ marginTop: '2rem', padding: '1.5rem 3rem', fontSize: '1.5rem', margin: '2rem auto 0 auto' }}
-                  onClick={handleNext}
+                  onClick={handleNextQuiz}
                 >
-                  Return to Scenario Grid
+                  {selectedQuizIndex < quizDataRaw.length - 1 ? 'Next Scenario ➔' : 'Return to Home'}
                 </button>
               </div>
             </motion.div>

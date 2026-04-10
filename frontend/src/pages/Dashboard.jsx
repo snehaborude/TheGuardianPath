@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MailWarning, Lock, Play, Star, BookOpen, MessageSquareWarning, Verified, Award } from 'lucide-react';
+import { MailWarning, Lock, Play, Star, BookOpen, MessageSquareWarning, Verified, Award, Bot, Megaphone, Video } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
 import { useProgress } from '../context/ProgressContext';
@@ -9,7 +9,7 @@ import VoiceButton from '../components/VoiceButton';
 export default function Dashboard() {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const { completedModules, isComplete } = useProgress();
+  const { completedModules, completedScenarios, isComplete } = useProgress();
 
   const totalModules = 4;
 
@@ -88,6 +88,43 @@ export default function Dashboard() {
         </div>
       </motion.div>
 
+      {/* New Upcoming Labs Section */}
+      <div style={{ marginBottom: '4rem', marginTop: '2rem' }}>
+        <h2 style={{ fontSize: '2rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem', borderBottom: '4px solid #E2E8F0', paddingBottom: '1rem' }}>
+          <Star className="text-warning" size={32} /> Innovation Labs
+        </h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+          
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} style={{ background: 'linear-gradient(135deg, #1E1B4B 0%, #312E81 100%)', padding: '2.5rem', borderRadius: '24px', color: 'white', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
+             <div style={{ background: 'rgba(255,255,255,0.1)', padding: '1.5rem', borderRadius: '16px', width: 'fit-content', marginBottom: '1.5rem' }}>
+                <Bot size={40} color="#818CF8" />
+             </div>
+             <h3 style={{ fontSize: '2.2rem', marginBottom: '1rem', fontWeight: 'bold' }}>AI Scam Simulator</h3>
+             <p style={{ fontSize: '1.4rem', color: '#C7D2FE', lineHeight: '1.6', marginBottom: '0', flex: 1 }}>Chat with an AI chatbot designed to mimic modern phone scammers. Learn to identify their psychological tricks.</p>
+             <div style={{ position: 'absolute', top: '-5px', right: '-5px', opacity: 0.1 }}><Bot size={180} /></div>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} style={{ background: 'linear-gradient(135deg, #7F1D1D 0%, #991B1B 100%)', padding: '2.5rem', borderRadius: '24px', color: 'white', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
+             <div style={{ background: 'rgba(255,255,255,0.1)', padding: '1.5rem', borderRadius: '16px', width: 'fit-content', marginBottom: '1.5rem' }}>
+                <Megaphone size={40} color="#FCA5A5" />
+             </div>
+             <h3 style={{ fontSize: '2.2rem', marginBottom: '1rem', fontWeight: 'bold' }}>Community Siren</h3>
+             <p style={{ fontSize: '1.4rem', color: '#FECACA', lineHeight: '1.6', marginBottom: '0', flex: 1 }}>Report local scams happening in your area to alert your neighbors and stay informed.</p>
+             <div style={{ position: 'absolute', top: '-5px', right: '-5px', opacity: 0.1 }}><Megaphone size={180} /></div>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} style={{ background: 'linear-gradient(135deg, #064E3B 0%, #065F46 100%)', padding: '2.5rem', borderRadius: '24px', color: 'white', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
+             <div style={{ background: 'rgba(255,255,255,0.1)', padding: '1.5rem', borderRadius: '16px', width: 'fit-content', marginBottom: '1.5rem' }}>
+                <Video size={40} color="#6EE7B7" />
+             </div>
+             <h3 style={{ fontSize: '2.2rem', marginBottom: '1rem', fontWeight: 'bold' }}>Deepfake Lab</h3>
+             <p style={{ fontSize: '1.4rem', color: '#A7F3D0', lineHeight: '1.6', marginBottom: '0', flex: 1 }}>Train your eyes to spot AI-generated videos and voices trying to impersonate family members.</p>
+             <div style={{ position: 'absolute', top: '-5px', right: '-5px', opacity: 0.1 }}><Video size={180} /></div>
+          </motion.div>
+
+        </div>
+      </div>
+
       <div>
         <h2 style={{ fontSize: '2rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem', borderBottom: '4px solid #E2E8F0', paddingBottom: '1rem' }}>
           <BookOpen className="text-secondary" size={32} /> {t('courses')}
@@ -125,7 +162,9 @@ export default function Dashboard() {
                 <p style={{ flex: 1, fontSize: '1.3rem', color: '#475569', marginBottom: '1rem' }}>{mod.description}</p>
                 
                 <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', background: '#F8FAFC', padding: '1rem', borderRadius: '12px', marginBottom: '1rem', color: '#334155', fontSize: '1.2rem', fontWeight: '700', border: '1px solid #E2E8F0' }}>
-                  <span style={{ background: '#2563EB', color: 'white', padding: '0.3rem 0.8rem', borderRadius: '6px', boxShadow: '0 2px 4px rgba(37,99,235,0.2)' }}>50</span> Interactive Practice Scenarios
+                  <span style={{ background: '#2563EB', color: 'white', padding: '0.3rem 0.8rem', borderRadius: '6px', boxShadow: '0 2px 4px rgba(37,99,235,0.2)' }}>
+                    {completedScenarios[mod.id]?.length || 0} / 20
+                  </span> Interactive Practice Scenarios
                 </div>
 
                 <button 

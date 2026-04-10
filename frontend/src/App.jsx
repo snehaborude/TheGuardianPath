@@ -10,11 +10,13 @@ import Footer from './components/Footer';
 import AuthPage from './pages/AuthPage';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { ProgressProvider } from './context/ProgressContext';
+import { ProgressProvider, useProgress } from './context/ProgressContext';
+import { Award, MailWarning, MessageSquareWarning, Lock, Verified as VerifiedIcon } from 'lucide-react';
 
 function MainApp() {
   const { t, toggleLanguage, lang } = useLanguage();
   const { token, logout, user } = useAuth();
+
 
   return (
     <Router>

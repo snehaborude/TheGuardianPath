@@ -153,8 +153,8 @@ app.post('/api/progress/scenario', authMiddleware, (req, res) => {
     if (!user.completedScenarios[moduleId].includes(scenarioIndex)) {
       user.completedScenarios[moduleId].push(scenarioIndex);
       
-      // Auto-mark module as completed if 50 scenarios are done
-      if (user.completedScenarios[moduleId].length >= 50) {
+      // Auto-mark module as completed if 20 scenarios are done
+      if (user.completedScenarios[moduleId].length >= 20) {
         if (!user.completedModules.includes(moduleId)) {
           user.completedModules.push(moduleId);
         }

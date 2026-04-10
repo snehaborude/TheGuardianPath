@@ -1,152 +1,254 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, ShieldAlert, Lock, Smartphone } from 'lucide-react';
+import { ArrowLeft, CheckCircle, ShieldAlert, Lock, ChevronRight, ChevronLeft, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProgress } from '../context/ProgressContext';
 import VoiceButton from '../components/VoiceButton';
 import { useLanguage } from '../context/LanguageContext';
-import modulesData from '../data/modulesData.json';
-
-const quizDataRaw = modulesData.securepin;
 
 export default function SecurePasswordModule() {
   const { lang, t } = useLanguage();
   const navigate = useNavigate();
-  const [selectedQuizIndex, setSelectedQuizIndex] = useState(null);
-  const [feedback, setFeedback] = useState(null);
-  const [showResult, setShowResult] = useState(false);
   const { markScenarioComplete, completedScenarios } = useProgress();
 
-  const currentQuiz = selectedQuizIndex !== null ? quizDataRaw[selectedQuizIndex] : null;
+  const totalScenarios = 20;
+  const [selectedQuizIndex, setSelectedQuizIndex] = useState(0);
+  const [inputPassword, setInputPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+  const [showResult, setShowResult] = useState(false);
 
-  const handleGuess = (guessIsSecure) => {
-    if (showResult) return;
-    const isCorrect = guessIsSecure === currentQuiz.isSecure;
-    setFeedback({
-      isCorrect,
-      message: currentQuiz.explanation
-    });
-    setShowResult(true);
-    markScenarioComplete('securepin', selectedQuizIndex);
-  };
-
-  const handleNext = () => {
-    setFeedback(null);
-    setShowResult(false);
-    setSelectedQuizIndex(null);
-  };
+  useEffect(() => {
+    const isFinished = (completedScenarios['securepin'] || []);
+    let firstUnfinished = 0;
+    for (let i = 0; i < totalScenarios; i++) {
+       if (!isFinished.includes(i)) {
+          firstUnfinished = i;
+          break;
+       }
+    }
+    if (isFinished.length >= 20) {
+       setSelectedQuizIndex(19);
+    } else {
+       setSelectedQuizIndex(firstUnfinished);
+    }
+  }, [completedScenarios]);
 
   const completedCount = (completedScenarios['securepin'] || []).length;
+  const isFinishedCurrent = (completedScenarios['securepin'] || []).includes(selectedQuizIndex);
 
-  if (selectedQuizIndex === null) {
-    return (
-      <div className="animate-fade-in" style={{ padding: '0 1rem', paddingBottom: '3rem' }}>
-        <button className="btn-secondary" onClick={() => navigate('/')} style={{ marginBottom: '2rem' }}>
-          <ArrowLeft size={24} /> {t('goBack')}
-        </button>
+  const evaluatePassword = () => {
+    const hasUpper = /[A-Z]/.test(inputPassword);
+    const hasLower = /[a-z]/.test(inputPassword);
+    const hasSymbol = /[@!#$%^&*<>]/.test(inputPassword);
+    const hasAtSymbol = /[@]/.test(inputPassword);
+    const hasNumbers = /[0-9]/.test(inputPassword);
+    const hasLength = inputPassword.length >= 8;
 
-        <div style={{ marginBottom: '3rem', textAlign: 'center' }}>
-          <h1 style={{ fontSize: '3rem', color: '#0F172A', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-            <Lock size={40} color="#3B82F6" /> 50 PIN Evaluation Scenarios
-            <VoiceButton text="50 PIN Evaluation Scenarios" />
-          </h1>
-          <p style={{ fontSize: '1.4rem', color: '#475569' }}>Evaluate 50 different PIN codes to determine if they are safe for banking.</p>
-          <div style={{ marginTop: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: completedCount === 50 ? '#D1FAE5' : '#DBEAFE', padding: '0.5rem 1.5rem', borderRadius: '20px', color: completedCount === 50 ? '#047857' : '#1D4ED8', fontWeight: 'bold', fontSize: '1.4rem', border: completedCount === 50 ? '2px solid #10B981' : 'none' }}>
-            {completedCount} / 50 Scenarios Completed
-            {completedCount === 50 && <span>🏆 - MODULE MASTERED</span>}
-          </div>
-        </div>
+    let isSecure = false;
+    let explanation = "";
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '1.5rem', maxWidth: '1200px', margin: '0 auto' }}>
-          {quizDataRaw.map((quiz, index) => {
-            const isFinished = (completedScenarios['securepin'] || []).includes(index);
-            return (
-              <motion.div
-                key={quiz.id}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setSelectedQuizIndex(index)}
-                style={{
-                  background: isFinished ? '#D1FAE5' : '#FFFFFF',
-                  border: isFinished ? '2px solid #10B981' : '2px solid #CBD5E1',
-                  borderRadius: '16px',
-                  padding: '2rem 1rem',
-                  textAlign: 'center',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 'bold',
-                  fontSize: '1.5rem',
-                  color: isFinished ? '#047857' : '#1E293B',
-                  transition: 'border-color 0.2s',
-                  position: 'relative'
-                }}
-              >
-                {isFinished && <CheckCircle size={20} color="#059669" style={{ position: 'absolute', top: '10px', right: '10px' }} />}
-                Scenario {index + 1}
-              </motion.div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
+    if (!hasLength) {
+      isSecure = false;
+      explanation = "Weak Password! Your password must be at least 8 characters long to be secure against brute-force attacks.";
+    } else if (hasUpper && hasLower && hasAtSymbol) {
+      isSecure = true;
+      explanation = "Excellent Password! You included uppercase, lowercase, and an '@' symbol. This is extremely secure!";
+    } else if (hasUpper && hasLower && hasSymbol) {
+      isSecure = true;
+      explanation = "Great job! A strong password with mixed case and symbols.";
+    } else if (!hasUpper && !hasLower && hasNumbers) {
+      isSecure = false;
+      explanation = "Weak Password! Numbers-only passwords are easy for computers to crack in seconds. Add letters and symbols.";
+    } else if (!hasUpper) {
+      isSecure = false;
+      explanation = "Weak Password! You are missing an uppercase letter. Mixing uppercase and lowercase makes it much harder to guess.";
+    } else if (!hasSymbol) {
+      isSecure = false;
+      explanation = "Weak Password! Add a special symbol like '@' to make it an excellent password.";
+    } else {
+      isSecure = false;
+      explanation = "Weak Password! Make sure you use a mix of uppercase, lowercase, and special characters.";
+    }
+
+    if (isSecure) {
+      markScenarioComplete('securepin', selectedQuizIndex);
+    }
+
+    setFeedback({ isCorrect: isSecure, message: explanation });
+    setShowResult(true);
+  };
+
+  const handleTryAgain = () => {
+    setInputPassword("");
+    setShowResult(false);
+    setFeedback(null);
+  };
+
+  const handleNextQuiz = () => {
+    setFeedback(null);
+    setShowResult(false);
+    setInputPassword("");
+    if (selectedQuizIndex < totalScenarios - 1) {
+      setSelectedQuizIndex(prev => prev + 1);
+    } else {
+      navigate('/');
+    }
+  };
+
+  const handlePrevQuiz = () => {
+    setFeedback(null);
+    setShowResult(false);
+    setInputPassword("");
+    if (selectedQuizIndex > 0) {
+      setSelectedQuizIndex(prev => prev - 1);
+    }
+  };
+
+  // Safe checks for live UI feedback
+  const hasUpper = /[A-Z]/.test(inputPassword);
+  const hasLower = /[a-z]/.test(inputPassword);
+  const hasSpecificSymbol = /[@]/.test(inputPassword);
+  const hasValidLength = inputPassword.length >= 8;
 
   return (
     <div className="animate-fade-in" style={{ padding: '0 1rem', paddingBottom: '3rem' }}>
-      <button className="btn-secondary" onClick={handleNext} style={{ marginBottom: '2rem' }}>
-        <ArrowLeft size={24} /> Return to Scenario Grid
-      </button>
+      
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <button className="btn-secondary" onClick={() => navigate('/')}>
+          <ArrowLeft size={24} /> {t('goBack')}
+        </button>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: completedCount === 20 ? '#D1FAE5' : '#DBEAFE', padding: '0.5rem 1.5rem', borderRadius: '20px', color: completedCount === 20 ? '#047857' : '#1D4ED8', fontWeight: 'bold', fontSize: '1.4rem' }}>
+          {completedCount} / {totalScenarios} Scenarios Completed
+          {completedCount === 20 && <span>🏆 MASTERED</span>}
+        </div>
+      </div>
 
-      <div className="glass-panel" style={{ textAlign: 'center', maxWidth: '800px', margin: '0 auto', background: '#F8FAFC' }}>
-        <Lock size={60} className="text-warning" style={{ margin: '0 auto 1rem auto' }} />
-        <h2 style={{ fontSize: '2.5rem', marginBottom: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          Analyze this PIN <VoiceButton text="Is this a secure PIN?" />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', padding: '0 1rem' }}>
+        <button 
+          className="btn-secondary" 
+          onClick={handlePrevQuiz} 
+          disabled={selectedQuizIndex === 0}
+          style={{ opacity: selectedQuizIndex === 0 ? 0.5 : 1 }}
+        >
+          <ChevronLeft size={24} /> Previous
+        </button>
+        <div style={{ fontSize: '1.5rem', fontWeight: 'bold', background: '#E2E8F0', padding: '0.5rem 1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          Scenario {selectedQuizIndex + 1}
+          {isFinishedCurrent && <CheckCircle size={20} color="#059669" />}
+        </div>
+        <button 
+          className="btn-secondary" 
+          onClick={handleNextQuiz}
+          disabled={selectedQuizIndex === totalScenarios - 1}
+          style={{ opacity: selectedQuizIndex === totalScenarios - 1 ? 0.5 : 1 }}
+        >
+          Next <ChevronRight size={24} />
+        </button>
+      </div>
+
+      <div className="glass-panel" style={{ textAlign: 'center', maxWidth: '800px', margin: '0 auto', background: '#F8FAFC', padding: '4rem 2rem', borderRadius: '24px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
+        
+        <div style={{ display: 'inline-flex', background: '#DBEAFE', padding: '1.5rem', borderRadius: '50%', marginBottom: '1.5rem' }}>
+          <ShieldCheck size={60} color="#1D4ED8" />
+        </div>
+        
+        <h2 style={{ fontSize: '2.8rem', marginBottom: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', color: '#0F172A' }}>
+          Create a Strong Password
+          <VoiceButton text="Create a Strong Password" />
         </h2>
-        <p style={{ fontSize: '1.4rem', marginBottom: '2rem' }}>
-          A user wants to set their banking PIN to the number below. Your job is to approve or reject it based on security best practices.
+        <p style={{ fontSize: '1.5rem', marginBottom: '3rem', color: '#475569', maxWidth: '600px', margin: '0 auto 3rem auto' }}>
+          A secure password defends your account from hackers. To achieve an excellent rating, try including an uppercase letter, a lowercase letter, and the @ symbol!
         </p>
 
-        {/* Fake Phone Screen */}
+        {/* Beautiful Password Input Card */}
         <div style={{ 
-          background: '#0F172A', 
-          borderRadius: '36px', 
-          padding: '1.5rem', 
-          maxWidth: '350px', 
+          background: '#FFFFFF', 
+          borderRadius: '24px', 
+          padding: '3rem', 
+          maxWidth: '500px', 
           margin: '0 auto 2rem auto',
-          boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
-          border: '8px solid #334155'
+          boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.01)',
+          border: '1px solid #E2E8F0'
         }}>
-          <div style={{ background: '#FFFFFF', borderRadius: '24px', padding: '3rem 1rem', minHeight: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <h3 style={{ fontSize: '1.5rem', color: '#64748B', marginBottom: '2rem' }}>Enter Passcode</h3>
-            
-            <div style={{ display: 'flex', gap: '0.8rem', marginBottom: '3rem' }}>
-              {currentQuiz.pin.split('').map((digit, i) => (
-                <div key={i} style={{ width: '35px', height: '45px', borderBottom: '4px solid #1E293B', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 'bold' }}>
-                  {digit}
-                </div>
-              ))}
-            </div>
+          
+          <div style={{ position: 'relative', marginBottom: '2rem' }}>
+            <input 
+              type={showPassword ? "text" : "password"}
+              value={inputPassword}
+              onChange={(e) => setInputPassword(e.target.value)}
+              placeholder="Type your password..."
+              disabled={showResult}
+              style={{
+                width: '100%',
+                padding: '1.5rem 4rem 1.5rem 1.5rem',
+                fontSize: '1.8rem',
+                border: '3px solid #CBD5E1',
+                borderRadius: '16px',
+                outline: 'none',
+                transition: 'border-color 0.2s',
+                fontFamily: 'monospace',
+                boxSizing: 'border-box',
+                background: showResult ? '#F1F5F9' : 'white',
+              }}
+              onFocus={(e) => e.target.style.borderColor = '#3B82F6'}
+              onBlur={(e) => e.target.style.borderColor = '#CBD5E1'}
+            />
+            <button 
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                position: 'absolute',
+                right: '1.5rem',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#64748B'
+              }}
+            >
+              {showPassword ? <EyeOff size={28} /> : <Eye size={28} />}
+            </button>
+          </div>
 
-            <div style={{ display: 'flex', gap: '1rem', width: '100%', padding: '0 1rem' }}>
-               <button 
-                 onClick={() => handleGuess(false)}
-                 disabled={showResult}
-                 style={{ flex: 1, padding: '1rem', background: '#FEE2E2', color: '#DC2626', border: '2px solid #FCA5A5', borderRadius: '12px', fontWeight: 'bold', fontSize: '1.2rem', cursor: showResult ? 'not-allowed' : 'pointer' }}
-               >
-                 Unsafe PIN
-               </button>
-               <button 
-                 onClick={() => handleGuess(true)}
-                 disabled={showResult}
-                 style={{ flex: 1, padding: '1rem', background: '#D1FAE5', color: '#059669', border: '2px solid #6EE7B7', borderRadius: '12px', fontWeight: 'bold', fontSize: '1.2rem', cursor: showResult ? 'not-allowed' : 'pointer' }}
-               >
-                 Secure PIN
-               </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2.5rem', textAlign: 'left' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '1.3rem', color: hasValidLength ? '#059669' : '#64748B', fontWeight: hasValidLength ? 'bold' : 'normal' }}>
+              <CheckCircle size={20} color={hasValidLength ? "#059669" : "#CBD5E1"} /> At least 8 characters long
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '1.3rem', color: hasUpper ? '#059669' : '#64748B', fontWeight: hasUpper ? 'bold' : 'normal' }}>
+              <CheckCircle size={20} color={hasUpper ? "#059669" : "#CBD5E1"} /> Contains Uppercase Letter (A-Z)
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '1.3rem', color: hasLower ? '#059669' : '#64748B', fontWeight: hasLower ? 'bold' : 'normal' }}>
+              <CheckCircle size={20} color={hasLower ? "#059669" : "#CBD5E1"} /> Contains Lowercase Letter (a-z)
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '1.3rem', color: hasSpecificSymbol ? '#059669' : '#64748B', fontWeight: hasSpecificSymbol ? 'bold' : 'normal' }}>
+              <CheckCircle size={20} color={hasSpecificSymbol ? "#059669" : "#CBD5E1"} /> Contains the '@' Symbol
             </div>
           </div>
+
+          <button 
+            onClick={evaluatePassword}
+            disabled={showResult || inputPassword.length === 0}
+            style={{ 
+              width: '100%', 
+              padding: '1.5rem', 
+              background: '#2563EB', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '16px', 
+              fontWeight: 'bold', 
+              fontSize: '1.6rem', 
+              cursor: (showResult || inputPassword.length === 0) ? 'not-allowed' : 'pointer', 
+              opacity: (showResult || inputPassword.length === 0) ? 0.5 : 1,
+              boxShadow: '0 4px 12px rgba(37,99,235,0.3)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '0.8rem'
+            }}
+          >
+            <Lock size={24} /> Evaluate Strength
+          </button>
         </div>
 
         <AnimatePresence>
@@ -159,26 +261,38 @@ export default function SecurePasswordModule() {
               <div style={{ 
                 background: feedback.isCorrect ? '#D1FAE5' : '#FEE2E2',
                 border: feedback.isCorrect ? '4px solid #059669' : '4px solid #DC2626',
-                padding: '2rem',
-                borderRadius: '16px',
-                marginTop: '2rem'
+                padding: '2.5rem',
+                borderRadius: '20px',
+                marginTop: '1rem',
+                maxWidth: '600px',
+                margin: '0 auto',
+                boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
               }}>
-                <h3 style={{ fontSize: '2rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', color: feedback.isCorrect ? '#047857' : '#B91C1C' }}>
-                  {feedback.isCorrect ? <CheckCircle size={32} /> : <ShieldAlert size={32} />}
-                  {feedback.isCorrect ? 'Spot On!' : 'Careful...'}
+                <h3 style={{ fontSize: '2.2rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', color: feedback.isCorrect ? '#047857' : '#B91C1C' }}>
+                  {feedback.isCorrect ? <CheckCircle size={36} /> : <ShieldAlert size={36} />}
+                  {feedback.isCorrect ? 'Outstanding!' : 'Alert!'}
                 </h3>
-                <p style={{ fontSize: '1.4rem', fontWeight: 'bold', color: '#000', margin: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                  {feedback?.message?.[lang]}
-                  <VoiceButton text={feedback?.message?.[lang] || ''} />
+                <p style={{ fontSize: '1.6rem', fontWeight: 'bold', color: '#000', margin: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '1.5rem' }}>
+                  {feedback?.message}
                 </p>
 
-                <button 
-                  className="btn-primary" 
-                  style={{ marginTop: '2rem', padding: '1rem 3rem', fontSize: '1.4rem', margin: '2rem auto 0 auto' }}
-                  onClick={handleNext}
-                >
-                  Return to Scenario Grid
-                </button>
+                {feedback.isCorrect ? (
+                  <button 
+                    className="btn-primary" 
+                    style={{ marginTop: '1rem', padding: '1.2rem 3.5rem', fontSize: '1.5rem', borderRadius: '12px', background: '#059669', border: 'none', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+                    onClick={handleNextQuiz}
+                  >
+                    {selectedQuizIndex < totalScenarios - 1 ? 'Next Scenario ➔' : 'Complete Module'}
+                  </button>
+                ) : (
+                  <button 
+                    className="btn-danger" 
+                    style={{ marginTop: '1rem', padding: '1.2rem 3.5rem', fontSize: '1.5rem', borderRadius: '12px', background: '#DC2626', border: 'none', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+                    onClick={handleTryAgain}
+                  >
+                    Try A Stronger Password ↺
+                  </button>
+                )}
               </div>
             </motion.div>
           )}
