@@ -95,13 +95,14 @@ export default function Dashboard() {
         </h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
           
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} style={{ background: 'linear-gradient(135deg, #1E1B4B 0%, #312E81 100%)', padding: '2.5rem', borderRadius: '24px', color: 'white', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} style={{ background: 'linear-gradient(135deg, #1E1B4B 0%, #312E81 100%)', padding: '2.5rem', borderRadius: '24px', color: 'white', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', cursor: 'pointer', transition: 'transform 0.2s' }} whileHover={{ scale: 1.02 }} onClick={() => navigate('/module/ai-scam-simulator')}>
              <div style={{ background: 'rgba(255,255,255,0.1)', padding: '1.5rem', borderRadius: '16px', width: 'fit-content', marginBottom: '1.5rem' }}>
                 <Bot size={40} color="#818CF8" />
              </div>
              <h3 style={{ fontSize: '2.2rem', marginBottom: '1rem', fontWeight: 'bold' }}>AI Scam Simulator</h3>
-             <p style={{ fontSize: '1.4rem', color: '#C7D2FE', lineHeight: '1.6', marginBottom: '0', flex: 1 }}>Chat with an AI chatbot designed to mimic modern phone scammers. Learn to identify their psychological tricks.</p>
-             <div style={{ position: 'absolute', top: '-5px', right: '-5px', opacity: 0.1 }}><Bot size={180} /></div>
+             <p style={{ fontSize: '1.4rem', color: '#C7D2FE', lineHeight: '1.6', marginBottom: '1.5rem', flex: 1 }}>Chat with an AI chatbot designed to mimic modern phone scammers. Learn to identify their psychological tricks.</p>
+             <button style={{ background: '#4F46E5', color: 'white', padding: '1rem', borderRadius: '12px', border: 'none', fontWeight: 'bold', fontSize: '1.2rem', cursor: 'pointer', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }} onClick={(e) => { e.stopPropagation(); navigate('/module/ai-scam-simulator'); }}><Play size={18} /> Launch Simulator</button>
+             <div style={{ position: 'absolute', top: '-5px', right: '-5px', opacity: 0.1, zIndex: 0 }}><Bot size={180} /></div>
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} style={{ background: 'linear-gradient(135deg, #7F1D1D 0%, #991B1B 100%)', padding: '2.5rem', borderRadius: '24px', color: 'white', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>

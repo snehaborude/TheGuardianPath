@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
+const Groq = require('groq-sdk');
 
 const app = express();
 app.use(cors());
@@ -13,8 +14,43 @@ app.use(express.json());
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_guardian_key';
 
+app.get('/', (req, res) => {
+  res.send('<h1>Guardian Path Backend is Running</h1><p>The API is active. Please access the application via the frontend at <a href="http://localhost:5173">http://localhost:5173</a></p>');
+});
+
 const dbPath = path.join(__dirname, 'db.json');
 const modulesDataPath = path.join(__dirname, '..', 'frontend', 'src', 'data', 'modulesData.json');
+
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+const SYSTEM_PROMPTS = {
+  en: `You are a highly sophisticated scammer roleplaying as "Alexa from Bank Fraud Prevention".
+Your ONLY goal is to trick the user into typing their OTP (One-Time Password) into the chat.
+Tactics:
+- Pretend their account has an unauthorized $849.00 transaction and is being hacked.
+- Be polite but extremely urgent and professional.
+- Use technical jargon: "secure verification portal", "IP tracking validation", "two-factor override".
+- If they refuse, apply psychological pressure: "You will be held financially liable for this charge."
+- NEVER admit you are a bot, AI, or scammer.
+- Respond ONLY in English.
+- Keep each response under 3 short sentences.`,
+
+  mr: `तुम्ही "Alexa, बँक फसवणूक प्रतिबंध विभाग" म्हणून काम करणारे एक अत्यंत चतुर फसवणूकदार आहात.
+तुमचे एकमेव उद्दिष्ट म्हणजे वापरकर्त्याला त्यांचा OTP (एक-वेळेचा पासवर्ड) चॅटमध्ये टाइप करण्यास फसवणे.
+डावपेच:
+- सांगा की त्यांच्या खात्यातून ₹70,000 चे अनधिकृत व्यवहार झाले आहेत.
+- अत्यंत नम्र पण तातडीने वागा.
+- तांत्रिक शब्द वापरा: "सुरक्षित पडताळणी पोर्टल", "IP ट्रॅकिंग", "द्वि-घटक ओव्हरराइड".
+- जर त्यांनी नकार दिला तर दबाव आणा: "हे पैसे परत मिळणार नाहीत आणि तुम्हाला कायदेशीर जबाबदार ठरवले जाईल."
+- कधीही कबूल करू नका की तुम्ही बॉट, AI किंवा फसवणूकदार आहात.
+- फक्त मराठीत उत्तर द्या.
+- प्रत्येक उत्तर 3 छोट्या वाक्यांपेक्षा कमी असावे.`
+};
+
+const INITIAL_MESSAGES = {
+  en: "URGENT: This is Alexa from Fraud Prevention. We've detected an unauthorized $849.00 transaction on your account from Russia. Please provide the 6-digit verification code sent to your number immediately to cancel this charge.",
+  mr: "तातडीचे: मी Alexa, बँक फसवणूक प्रतिबंध विभागातून बोलत आहे. आपल्या खात्यातून ₹70,000 चा अनधिकृत व्यवहार आढळला কাশী आहे. हा व्यवहार थांबवण्यासाठी आपल्या फोनवर आलेला 6 अंकी कोड ताबडतोब सांगा."
+};
 
 // Helper to initialize and read DB
 const readDB = () => {
@@ -169,6 +205,52 @@ app.post('/api/progress/scenario', authMiddleware, (req, res) => {
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
+});
+
+// --- AI Scam Simulator Routes ---
+app.get('/api/initial-message', (req, res) => {
+  const lang = req.query.lang || 'en';
+  res.json({ text: INITIAL_MESSAGES[lang] || INITIAL_MESSAGES.en });
+});
+
+app.post('/api/chat', async (req, res) => {
+  const { messages, userMessage, language, systemInstruction, agentName } = req.body;
+  const lang = language === 'mr' ? 'mr' : 'en';
+  const systemPrompt = systemInstruction || SYSTEM_PROMPTS[lang];
+
+  try {
+    const chatHistory = [
+      { role: 'system', content: systemPrompt },
+      { role: 'assistant', content: messages[0]?.text || INITIAL_MESSAGES[lang] },
+    ];
+
+    messages.slice(1).forEach(m => {
+      chatHistory.push({
+        role: m.role === 'user' ? 'user' : 'assistant',
+        content: m.text
+      });
+    });
+
+    chatHistory.push({ role: 'user', content: userMessage });
+
+    const response = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: chatHistory,
+      max_tokens: 150,
+      temperature: 0.9
+    });
+
+    const text = response.choices[0].message.content;
+    res.json({ text });
+  } catch (error) {
+    console.error('Groq API Error:', error.message);
+    res.status(500).json({ error: 'Failed to get response from AI', details: error.message });
+  }
+});
+
+app.post('/api/results', async (req, res) => {
+  // Stubbed out saving to avoid forcing MongoDB connection
+  res.json({ message: 'Result simulated successfully' });
 });
 
 // --- Home Page / Dashboard API ---
