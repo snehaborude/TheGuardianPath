@@ -39,7 +39,7 @@ function MainApp() {
             display: 'flex', alignItems: 'center', gap: '1rem', 
             fontSize: '2.5rem', fontWeight: '800', color: '#FFFFFF', textDecoration: 'none' 
           }}>
-            <ShieldCheck size={48} color="#60A5FA" />
+            <img src="/logo.png" alt="Guardian Path Logo" style={{ width: '48px', height: '48px', borderRadius: '12px' }} />
             <span>The Guardian Path</span>
           </Link>
           
