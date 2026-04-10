@@ -31,8 +31,16 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+html {
+  scroll-behavior: smooth;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
 body {
   margin: 0;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
   font-family: var(--font-family);
   background-color: var(--bg-color-main);
   background-image: url('/bg.png');
@@ -50,10 +58,17 @@ body::before, body::after {
   display: none;
 }
 
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
 .app-container {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  flex: 1;
 }
 
 .main-content {
